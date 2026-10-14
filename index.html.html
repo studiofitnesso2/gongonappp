@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GongonApp</title>
+<style>
+:root{--bg:#f6f8f6;--card:#fff;--ink:#17261f;--mut:#5f7268;--g:#14532d;--g2:#1f7a45;--line:#dfe7e1;--ok:#1f7a45;--warn:#b7791f;--bad:#b42318;--okb:#e3f3e8;--warnb:#fbf1dc;--badb:#fde8e6;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1a13;--card:#14241b;--ink:#e8f0ea;--mut:#9bb0a3;--g:#7bd99f;--g2:#4fb87a;--line:#24392c;--ok:#6fd59a;--warn:#e8b75a;--bad:#ff8a7d;--okb:#15332280;--warnb:#3a2f14;--badb:#3d1b17;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1a13;--card:#14241b;--ink:#e8f0ea;--mut:#9bb0a3;--g:#7bd99f;--g2:#4fb87a;--line:#24392c;--ok:#6fd59a;--warn:#e8b75a;--bad:#ff8a7d;--okb:#15332280;--warnb:#3a2f14;--badb:#3d1b17;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--g);color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) header{background:#0a3d22;color:#e8f0ea}}
+header b{font-size:18px;letter-spacing:.3px}header span{opacity:.8;font-size:12px}
+nav{display:flex;gap:4px;padding:8px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;overflow-x:auto}
+nav button{flex:1;min-width:max-content;border:0;background:none;color:var(--mut);padding:9px 12px;border-radius:8px;font:inherit;font-weight:600;cursor:pointer}
+nav button.on{background:var(--g);color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) nav button.on{color:#0d1a13}}
+main{max-width:900px;margin:0 auto;padding:14px}
+h2{margin:6px 0 12px;font-size:18px;color:var(--g)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
+.k{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.k small{color:var(--mut);display:block}.k b{font-size:20px}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--g2)}
+.row{display:flex;align-items:center;gap:8px;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.row:last-child{border:0}
+.tag{font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.pago,.dia{background:var(--okb);color:var(--ok)}.pendente,.prox{background:var(--warnb);color:var(--warn)}.atrasado,.pend{background:var(--badb);color:var(--bad)}
+input,select,button.b{font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+button.b{background:var(--g);color:#fff;border:0;font-weight:600;cursor:pointer}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button.b{color:#0d1a13}}
+button.s{background:none;color:var(--mut);border:1px solid var(--line)}
+form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+label{font-size:12px;color:var(--mut);display:flex;flex-direction:column;gap:3px}
+.mut{color:var(--mut);font-size:13px}.act{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.chart{display:flex;align-items:flex-end;gap:8px;height:110px}.chart div{flex:1;text-align:center;font-size:11px;color:var(--mut)}.chart i{display:block;background:var(--g2);border-radius:4px 4px 0 0;min-height:2px;margin-bottom:3px}
+details summary{cursor:pointer;color:var(--g);font-size:13px}
+</style>
+</head>
+<body>
+<header><b>GongonApp</b><span>Gestão do personal</span></header>
+<nav id="nav"></nav>
+<main id="m"></main>
+<script>
+const K='gongon.v1';let mem=null;
+function load(){try{const v=JSON.parse(localStorage.getItem(K));if(v)return v}catch(e){}return mem||{alunos:[],pags:[],pesq:[]}}
+let S=load();
+function save(){mem=S;try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const TODAY=ymd(new Date());
+const brl=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const br=s=>s?s.split('-').reverse().join('/'):'';
+const dim=(y,m)=>new Date(y,m,0).getDate();
+const addDays=(s,n)=>{const d=new Date(s+'T12:00');d.setDate(d.getDate()+n);return ymd(d)};
+const daysTo=s=>Math.round((new Date(s+'T12:00')-new Date(TODAY+'T12:00'))/864e5);
+function addMonths(s,n){const [y,m,d]=s.split('-').map(Number);const t=new Date(y,m-1+n,1);return ymd(new Date(t.getFullYear(),t.getMonth(),Math.min(d,dim(t.getFullYear(),t.getMonth()+1))))}
+let tab='painel',mes=TODAY.slice(0,7);
+const ativos=()=>S.alunos.filter(a=>a.ativo!==false);
+const pag=(a,ym)=>S.pags.find(p=>p.aid===a.id&&p.mes===ym);
+function venc(a,ym){const [y,m]=ym.split('-').map(Number);return ym+'-'+pad(Math.min(a.dia,dim(y,m)))}
+function st(a,ym){if(pag(a,ym))return 'pago';return venc(a,ym)<TODAY?'atrasado':'pendente'}
+function pesq(a){const done=S.pesq.filter(p=>p.aid===a.id).sort((x,y)=>x.data<y.data?1:-1);
+ const next=addMonths(a.inicio,done.length+1),d=daysTo(next);
+ return {next,d,done,s:d<=0?'pend':d<=7?'prox':'dia'}}
+const PL={dia:'Em dia',prox:'Próxima',pend:'Pendente'};
+function resumo(ym){const A=ativos();const r={prev:0,rec:0,pagos:0,atr:0,pend:0,list:A};
+ A.forEach(a=>{r.prev+=+a.valor;const s=st(a,ym);if(s==='pago'){r.rec+=+pag(a,ym).valor;r.pagos++}else if(s==='atrasado')r.atr++;else r.pend++});return r}
+function nav(){const t=[['painel','Painel'],['alunos','Alunos'],['fin','Financeiro'],['pesq','Pesquisas']];
+ document.getElementById('nav').innerHTML=t.map(([k,n])=>`<button class="${tab===k?'on':''}" onclick="go('${k}')">${n}</button>`).join('')}
+function go(t){tab=t;render()}
+function setMes(v){if(v){mes=v;render()}}
+const mesInp=()=>`<input type="month" value="${mes}" onchange="setMes(this.value)" aria-label="Mês">`;
+function render(){nav();const m=document.getElementById('m');m.innerHTML={painel,alunos,fin,pesqv}[tab]()}
+
+function painel(){const r=resumo(mes),A=r.list;
+ const pc=r.prev?Math.round(r.rec/r.prev*100):0;
+ const hist=[];for(let i=5;i>=0;i--){const d=new Date(mes+'-01T12:00');d.setMonth(d.getMonth()-i);const ym=ymd(d).slice(0,7);
+  hist.push([ym,S.pags.filter(p=>p.mes===ym).reduce((s,p)=>s+ +p.valor,0)])}
+ const mx=Math.max(1,...hist.map(h=>h[1]));
+ const al=[];A.forEach(a=>{const s=st(a,mes);
+  if(s==='atrasado')al.push(['atrasado',`${a.nome}: pagamento atrasado (venc. ${br(venc(a,mes))})`]);
+  else if(s==='pendente'&&daysTo(venc(a,mes))===1)al.push(['pendente',`${a.nome}: mensalidade vence amanhã`]);
+  const p=pesq(a);if(p.s!=='dia')al.push([p.s,`${a.nome}: pesquisa ${p.s==='pend'?'pendente':'em '+p.d+' dia(s)'} (${br(p.next)})`])});
+ return `<div class="row" style="border:0"><h2>Painel</h2>${mesInp()}</div>
+ <div class="grid">
+ <div class="k"><small>Previsto no mês</small><b>${brl(r.prev)}</b></div>
+ <div class="k"><small>Recebido</small><b style="color:var(--ok)">${brl(r.rec)}</b></div>
+ <div class="k"><small>Pendente</small><b style="color:var(--warn)">${brl(Math.max(0,r.prev-r.rec))}</b></div>
+ <div class="k"><small>Alunos ativos</small><b>${A.length}</b></div>
+ <div class="k"><small>Já pagaram</small><b>${r.pagos}</b></div>
+ <div class="k"><small>Atrasados</small><b style="color:var(--bad)">${r.atr}</b></div>
+ <div class="k"><small>A pagar</small><b>${r.pend}</b></div></div>
+ <div class="card"><div class="row" style="border:0;padding:0 0 8px"><b>Recebimento do mês</b><span class="mut">${pc}%</span></div><div class="bar"><i style="width:${pc}%"></i></div></div>
+ <div class="card"><b>Receita dos últimos 6 meses</b><div class="chart" style="margin-top:10px">${hist.map(h=>`<div><i style="height:${Math.round(h[1]/mx*80)}px"></i>${h[0].slice(5)}/${h[0].slice(2,4)}</div>`).join('')}</div></div>
+ <div class="card"><b>Precisam de atenção</b>${al.length?al.map(x=>`<div class="row"><span>${x[1]}</span><span class="tag ${x[0]}">${x[0]==='pend'?'pesquisa':x[0]==='prox'?'pesquisa':x[0]}</span></div>`).join(''):'<p class="mut">Tudo em dia. 🌿</p>'}</div>`}
+
+function alunos(){return `<h2>Alunos</h2>
+ <div class="card"><form onsubmit="addA(event)">
+ <label>Nome<input name="nome" required></label>
+ <label>Mensalidade (R$)<input name="valor" type="number" step="0.01" min="0" required></label>
+ <label>Dia do vencimento<input name="dia" type="number" min="1" max="31" required></label>
+ <label>Forma de pagamento<select name="forma"><option>Pix</option><option>Dinheiro</option><option>Cartão</option><option>Transferência</option><option>Outro</option></select></label>
+ <label>Início do ciclo<input name="inicio" type="date" value="${TODAY}" required></label>
+ <label>&nbsp;<button class="b">Cadastrar</button></label></form></div>
+ <div class="card">${S.alunos.length?S.alunos.map(a=>{const h=S.pags.filter(p=>p.aid===a.id).sort((x,y)=>x.data<y.data?1:-1);
+ return `<div class="row"><div><b>${esc(a.nome)}</b> ${a.ativo===false?'<span class="tag atrasado">inativo</span>':''}<div class="mut">${brl(a.valor)} · dia ${a.dia} · ${a.forma} · ciclo desde ${br(a.inicio)}</div>
+ <details><summary>Histórico (${h.length})</summary>${h.map(p=>`<div class="mut">${p.mes} · ${brl(p.valor)} · ${p.forma} · pago em ${br(p.data)}</div>`).join('')||'<div class="mut">Sem pagamentos.</div>'}</details></div>
+ <div class="act"><button class="b s" onclick="edA('${a.id}')">Editar valor</button><button class="b s" onclick="togA('${a.id}')">${a.ativo===false?'Reativar':'Inativar'}</button><button class="b s" onclick="delA('${a.id}')">Excluir</button></div></div>`}).join(''):'<p class="mut">Nenhum aluno cadastrado ainda.</p>'}</div>`}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function addA(e){e.preventDefault();const f=new FormData(e.target);
+ S.alunos.push({id:'a'+Date.now(),nome:f.get('nome').trim(),valor:+f.get('valor'),dia:+f.get('dia'),forma:f.get('forma'),inicio:f.get('inicio'),ativo:true});save();render()}
+function edA(id){const a=S.alunos.find(x=>x.id===id);const v=prompt('Nova mensalidade (R$):',a.valor);if(v&&!isNaN(+v)){a.valor=+v;save();render()}}
+function togA(id){const a=S.alunos.find(x=>x.id===id);a.ativo=a.ativo===false;save();render()}
+function delA(id){if(confirm('Excluir aluno e todo o histórico?')){S.alunos=S.alunos.filter(a=>a.id!==id);S.pags=S.pags.filter(p=>p.aid!==id);S.pesq=S.pesq.filter(p=>p.aid!==id);save();render()}}
+
+function fin(){const o={atrasado:0,pendente:1,pago:2};
+ const L=ativos().slice().sort((a,b)=>o[st(a,mes)]-o[st(b,mes)]||a.nome.localeCompare(b.nome));
+ return `<div class="row" style="border:0"><h2>Financeiro</h2>${mesInp()}</div><div class="card">${L.length?L.map(a=>{const s=st(a,mes),p=pag(a,mes),am=s==='pendente'&&daysTo(venc(a,mes))===1;
+ return `<div class="row"><div><b>${esc(a.nome)}</b><div class="mut">${brl(a.valor)} · venc. ${br(venc(a,mes))}${am?' · <b style="color:var(--warn)">vence amanhã</b>':''}${p?` · ${p.forma}, pago em ${br(p.data)}`:''}</div></div>
+ <div class="act"><span class="tag ${s}">${s[0].toUpperCase()+s.slice(1)}</span>${p?`<button class="b s" onclick="undo('${a.id}')">Desfazer</button>`:`<select id="f${a.id}">${['Pix','Dinheiro','Cartão','Transferência','Outro'].map(f=>`<option${f===a.forma?' selected':''}>${f}</option>`).join('')}</select><button class="b" onclick="pay('${a.id}')">Pago</button>`}</div></div>`}).join(''):'<p class="mut">Cadastre alunos para começar.</p>'}</div>`}
+function pay(id){const a=S.alunos.find(x=>x.id===id);const d=prompt('Data do pagamento (AAAA-MM-DD):',TODAY);if(!d||!/^\d{4}-\d{2}-\d{2}$/.test(d))return;
+ S.pags.push({id:'p'+Date.now(),aid:id,mes,valor:a.valor,forma:document.getElementById('f'+id).value,data:d});save();render()}
+function undo(id){S.pags=S.pags.filter(p=>!(p.aid===id&&p.mes===mes));save();render()}
+
+function pesqv(){const o={pend:0,prox:1,dia:2};
+ const L=ativos().map(a=>({a,p:pesq(a)})).sort((x,y)=>o[x.p.s]-o[y.p.s]||x.p.next.localeCompare(y.p.next));
+ return `<h2>Pesquisas mensais</h2><div class="card">${L.length?L.map(({a,p})=>`<div class="row"><div><b>${esc(a.nome)}</b><div class="mut">Próxima: ${br(p.next)} (${p.d<0?Math.abs(p.d)+' dia(s) de atraso':p.d===0?'hoje':'em '+p.d+' dia(s)'})</div>
+ <details><summary>Histórico (${p.done.length})</summary>${p.done.map(x=>`<div class="mut">Aplicada em ${br(x.data)}</div>`).join('')||'<div class="mut">Nenhuma ainda.</div>'}</details></div>
+ <div class="act"><span class="tag ${p.s}">${PL[p.s]}</span><button class="b" onclick="done('${a.id}')">Realizada</button></div></div>`).join(''):'<p class="mut">Cadastre alunos para começar.</p>'}</div>`}
+function done(id){const d=prompt('Data de aplicação (AAAA-MM-DD):',TODAY);if(!d||!/^\d{4}-\d{2}-\d{2}$/.test(d))return;S.pesq.push({aid:id,data:d});save();render()}
+render();
+</script>
+</body>
+</html>
